@@ -20,7 +20,7 @@ brew install pipenv
 pipenv --python 3.10.4 install
 ```
 
-## Start
+## Run
 ```sh
 # Launch virtual environment
 pipenv shell
