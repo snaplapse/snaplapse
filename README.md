@@ -25,6 +25,6 @@ pipenv --python 3.10.4 install
 # Launch virtual environment
 pipenv shell
 
-# Start the server
+# Run the server
 python manage.py runserver
 ```
