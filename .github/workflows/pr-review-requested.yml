@@ -10,12 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
-      # - if: contains(github.event.pull_request.requested_reviewers, 'danielkim10')
-      - run: echo "DISCORD_USER_ID=<@173275228858744832>" >> $GITHUB_ENV
+      - if: contains(github.event.pull_request.requested_reviewers.*.login, 'danielkim10')
+        run: echo "DISCORD_USER_ID=<@173275228858744832>" >> $GITHUB_ENV
       - name: Discord Notification
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           PR_URL: https://github.com/snaplapse/${{ github.event.repository.name }}/pull/${{ github.event.number }}
         uses: Ilshidur/action-discord@master
         with:
-            args: ${{ env.PR_URL }} ${{ env.DISCORD_USER_ID }} ${{ toJson(github.event.pull_request.requested_reviewers) }}
+            args: ${{ env.PR_URL }} ${{ env.DISCORD_USER_ID }}
