@@ -13,7 +13,7 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           PR_URL: https://github.com/snaplapse/${{ github.event.repository.name }}/pull/${{ github.event.number }}
-          TAG: poo2495
+          TAG: poo#2495
         uses: Ilshidur/action-discord@master
         with:
             args: ${{ env.PR_URL }} @${{ env.TAG }}
