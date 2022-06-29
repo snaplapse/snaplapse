@@ -15,4 +15,4 @@ jobs:
           PR_URL: https://github.com/snaplapse/${{ github.event.repository.name }}/pull/${{ github.event.number }}
         uses: Ilshidur/action-discord@master
         with:
-            args: $PR_URL
+            args: ${{ env.PR_URL }}
