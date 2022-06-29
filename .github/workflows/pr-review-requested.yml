@@ -13,7 +13,7 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           PR_URL: https://github.com/snaplapse/${{ github.event.repository.name }}/pull/${{ github.event.number }}
-          DISCORD_USER_ID: 173275228858744832
+          DISCORD_USER_ID: <@173275228858744832>
         uses: Ilshidur/action-discord@master
         with:
-            args: ${{ env.PR_URL }} <@${{ env.DISCORD_USER_ID }}>
+            args: ${{ env.PR_URL }} ${{ env.DISCORD_USER_ID }}
