@@ -9,8 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
-      - if: contains(github.event.pull_request.requested_reviewers, 'danielkim10')
-        run: echo "DISCORD_USER_ID=<@173275228858744832>" >> $GITHUB_ENV
+      # - if: contains(github.event.pull_request.requested_reviewers, 'danielkim10')
+      - run: echo "DISCORD_USER_ID=<@173275228858744832>" >> $GITHUB_ENV
       - name: Discord Notification
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
