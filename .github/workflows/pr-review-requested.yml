@@ -12,6 +12,7 @@ jobs:
       - name: Discord Notification
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          PR_URL: https://github.com/snaplapse/${{ github.event.repository.name }}/pull/${{ github.event.number }}
         uses: Ilshidur/action-discord@master
         with:
-            args: https://github.com/snaplapse/${{ github.event.repository.name }}/pull/${{ github.event.number }}
+            args: $PR_URL
