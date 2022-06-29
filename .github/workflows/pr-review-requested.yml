@@ -1,0 +1,17 @@
+name: PR Review Requested
+
+on:
+  pull_request:
+    types: [review_requested]
+
+jobs:
+  discord-notification:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Set DISCORD_WEBHOOK
+        run: echo -e "DISCORD_WEBHOOK=${{ secrets.DISCORD_WEBHOOK }}" >> $GITHUB_ENV
+      - name: Discord Notification
+        uses: Ilshidur/action-discord@master
+        with:
+            args: hello
