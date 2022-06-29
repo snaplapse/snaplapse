@@ -1,5 +1,7 @@
 # SnapLapse
 
+hello
+
 ## Setup
 Install pyenv
 https://github.com/pyenv/pyenv
