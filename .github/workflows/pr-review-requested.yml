@@ -3,6 +3,7 @@ name: PR Review Requested
 on:
   pull_request:
     types: [review_requested]
+  workflow_dispatch:
 
 jobs:
   discord-notification:
@@ -17,4 +18,4 @@ jobs:
           PR_URL: https://github.com/snaplapse/${{ github.event.repository.name }}/pull/${{ github.event.number }}
         uses: Ilshidur/action-discord@master
         with:
-            args: ${{ env.PR_URL }} ${{ env.DISCORD_USER_ID }} ${{ github.event.pull_request.requested_reviewers }}
+            args: ${{ env.PR_URL }} ${{ env.DISCORD_USER_ID }} ${{ toJson(github.event.pull_request.requested_reviewers) }}
