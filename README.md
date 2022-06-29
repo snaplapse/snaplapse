@@ -34,3 +34,5 @@ pipenv shell
 # Run the server
 python manage.py runserver
 ```
+
+test
