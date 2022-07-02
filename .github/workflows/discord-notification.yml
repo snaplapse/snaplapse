@@ -1,4 +1,4 @@
-name: PR Review Requested
+name: Discord Notification
 
 on:
   pull_request:
