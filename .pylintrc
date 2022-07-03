@@ -2,6 +2,9 @@
 
 ignore-paths=^.*/migrations/.*$,
 
+load-plugins=pylint_django
+
+django-settings-module=snaplapse.settings
 
 [MESSAGES CONTROL]
 
