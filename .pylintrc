@@ -1,0 +1,9 @@
+[MAIN]
+
+ignore-paths=^.*/migrations/.*$,
+
+
+[MESSAGES CONTROL]
+
+disable=missing-class-docstring,
+        missing-module-docstring

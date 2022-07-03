@@ -31,6 +31,9 @@ pre-commit install
 # Launch virtual environment
 pipenv shell
 
+# Run migrations
+python manage.py migrate
+
 # Run the server
 python manage.py runserver
 ```
