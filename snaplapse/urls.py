@@ -15,9 +15,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from media import views
 
 
 urlpatterns = [
     path('api/', include('api.urls')),
     path('admin/', admin.site.urls),
+    path('media/create_bucket/', views.create_bucket),
+    path('media/get_bucket/<str:bucket_name>', views.get_bucket),
+    path('media/list_buckets/', views.list_buckets),
+    path('media/list_objects/<str:bucket_name>', views.list_objects),
+    path('media/upload_file/<str:bucket_name>', views.upload_file),
+    path('media/delete_objects/<str:bucket_name>', views.delete_objects),
 ]
