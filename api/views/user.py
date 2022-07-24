@@ -1,4 +1,3 @@
-from cgitb import lookup
 from rest_framework import generics
 
 from ..models import User
