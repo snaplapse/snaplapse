@@ -1,6 +1,6 @@
-from .user import UserList, UserDetail, UserDetailByName
-from .photo import PhotoList, PhotoDetail
-from .location import LocationList, LocationDetail
-from .like import LikeList, LikeDetail
-from .category import CategoryList, CategoryDetail
-from .tag import TagList, TagDetail
+from .category import CategoryDetail, CategoryList
+from .like import LikeDetail, LikeList
+from .location import LocationDetail, LocationList
+from .photo import PhotoDetail, PhotoList
+from .tag import TagDetail, TagList
+from .user import UserDetail, UserDetailByName, UserList

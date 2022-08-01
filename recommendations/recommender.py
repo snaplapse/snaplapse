@@ -1,11 +1,10 @@
+import sqlite3
 from ast import increment_lineno
 from turtle import pd
 
 import pandas as pd
 
-import sqlite3
-
-conn = sqlite3.connect('test_database') 
+conn = sqlite3.connect('test_database')
 c = conn.cursor()
 
 c.execute('''
@@ -15,14 +14,14 @@ c.execute('''
 
 c.execute('''
           CREATE TABLE IF NOT EXISTS Ratings
-          ([locationId] INTEGER, 
+          ([locationId] INTEGER,
           [location] INTEGER,
-          [category] TEXT, 
+          [category] TEXT,
           [rating] INTEGER,
           [timestamp] INTEGER,
           [user, item] PRIMARY KEY)
           ''')
-          
+
 c.execute('''
           INSERT INTO Ratings (locationId, location, category, rating, timestamp)
                 VALUES
@@ -31,11 +30,11 @@ c.execute('''
                 (3,'University of Waterloo','S',99,1260759146),
                 (4,'Crunch Fitness Waterloo','G',1,1260759147),
                 (5,'Conestoga Mall','MF',50,1260759148)
-          ''')                     
+          ''')
 
 c.execute('''
           CREATE TABLE IF NOT EXISTS Locations
-          ([locationId] INTEGER PRIMARY KEY, 
+          ([locationId] INTEGER PRIMARY KEY,
           [location] TEXT,
           [category] TEXT)
           ''')
@@ -53,7 +52,7 @@ c.execute('''
                 (8,'Lazeez','F'),
                 (9,'Fairview Mall','MF'),
                 (10,'PAC Gym','G')
-          ''')                     
+          ''')
 
 conn.commit()
 
@@ -92,13 +91,13 @@ def main():
 #     print(len(x) == len(locations))
 
 #     print(locations_with_categories)
-    
+
     #Filling in the NaN values with 0 to show that a location doesn't have that column's category
     locations_with_categories = locations_with_categories.fillna(0)
 #     print(locations_with_categories.head(3))
 
     # print out the shape and first five rows of ratings data.
-#     print('Ratings_df shape:', ratings.shape)          
+#     print('Ratings_df shape:', ratings.shape)
 #     print(ratings.head())
 
     # filter the selection by outputing locations that exist in both ratings and locations_with_categories
@@ -123,7 +122,7 @@ def main():
     # Let's see the result
     print("User affinities for each category:")
     print(user_profile)
-    
+
 
     # let's set the index to the locationId
     locations_with_categories = locations_with_categories.set_index(locations_with_categories.locationId)
@@ -149,7 +148,7 @@ def main():
     #Just a peek at the values
     print("Recommended locations by highest affinity:")
     print(recommendation_table_df.head(20))
-    
+
     # first we make a copy of the original locations dataframe
     copy = locations.copy(deep=True)
 
