@@ -38,6 +38,8 @@ python manage.py migrate
 python manage.py runserver
 ```
 
+https://peps.python.org/pep-0008/
+
 ## Setting up AWS
 Boto3 is the package required to use the AWS SDK for Python
 https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html
