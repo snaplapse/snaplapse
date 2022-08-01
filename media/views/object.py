@@ -25,11 +25,11 @@ def list_objects(_, bucket_name):
             status=status.HTTP_400_BAD_REQUEST
         )
 
+
 @api_view(['POST'])
 def upload_file(request, bucket_name):
     object_name = request.FILES['image']
     file_name = request.POST.get('file_name')
-
     s3_client = boto3.client('s3')
     try:
         s3_client.upload_fileobj(object_name, bucket_name, file_name)
@@ -43,6 +43,7 @@ def upload_file(request, bucket_name):
             {'success': False, 'message': "Bad request"},
             status=status.HTTP_400_BAD_REQUEST
         )
+
 
 @api_view(['PUT'])
 def delete_objects(request, bucket_name):

@@ -27,6 +27,7 @@ def create_bucket(request):
             status=status.HTTP_400_BAD_REQUEST
         )
 
+
 @api_view(['GET'])
 def get_bucket(_, bucket_name):
     try:
@@ -48,6 +49,7 @@ def get_bucket(_, bucket_name):
             {'success': False, 'message': "Bad request"},
             status=status.HTTP_400_BAD_REQUEST
         )
+
 
 @api_view(['GET'])
 def list_buckets(_):

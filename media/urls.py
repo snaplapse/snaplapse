@@ -3,6 +3,7 @@ from rest_framework.urlpatterns import format_suffix_patterns
 
 from . import views
 
+
 urlpatterns = [
     path('create_bucket/', views.create_bucket),
     path('get_bucket/<str:bucket_name>', views.get_bucket),
