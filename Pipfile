@@ -11,6 +11,7 @@ djangorestframework = "*"
 boto3 = "*"
 dj-database-url = "*"
 pylint = "*"
+gunicorn = "*"
 
 [dev-packages]
 pylint = "*"
