@@ -10,6 +10,7 @@ psycopg2 = "*"
 djangorestframework = "*"
 boto3 = "*"
 dj-database-url = "*"
+pylint = "*"
 
 [dev-packages]
 pylint = "*"
