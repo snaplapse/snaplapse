@@ -30,7 +30,9 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'snaplapse.herokuapp.com',
+]
 
 
 # Application definition
@@ -101,7 +103,8 @@ DATABASES = {
         env('POSTGRES_HOST') +
         ':' +
         env('POSTGRES_PORT') +
-        '/snaplapse'
+        '/' +
+        env('POSTGRES_DB')
     ),
 }
 
