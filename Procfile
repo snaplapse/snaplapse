@@ -1,1 +1,1 @@
-web: gunicorn snaplapse:app
+web: gunicorn snaplapse.wsgi
