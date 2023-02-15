@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from django.contrib.auth.hashers import make_password
+
 from .models import Category, Like, Location, Photo, Tag, User
 
 
@@ -48,3 +50,11 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'photos', 'likes', 'secret', 'created']
+
+    def create(self, validated_data):
+        user = User.objects.create(
+            username = validated_data['username'],
+            secret = make_password(validated_data['secret'])
+        )
+        user.save()
+        return user
