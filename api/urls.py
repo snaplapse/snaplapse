@@ -8,6 +8,7 @@ urlpatterns = [
     path('users/', views.UserList.as_view()),
     path('users/<int:pk>/', views.UserDetail.as_view()),
     re_path('^users/(?P<username>.+)/$', views.UserDetailByName.as_view()),
+    path('login/', views.login),
     path('photos/', views.PhotoList.as_view()),
     path('photos/<int:pk>/', views.PhotoDetail.as_view()),
     path('locations/', views.LocationList.as_view()),
