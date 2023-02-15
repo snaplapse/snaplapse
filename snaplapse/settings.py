@@ -32,6 +32,8 @@ DEBUG = env('DEBUG')
 
 ALLOWED_HOSTS = [
     'snaplapse.herokuapp.com',
+    '127.0.0.1',
+    'localhost',
 ]
 
 
