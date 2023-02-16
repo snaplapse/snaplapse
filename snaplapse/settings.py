@@ -34,6 +34,7 @@ ALLOWED_HOSTS = [
     'snaplapse.herokuapp.com',
     '127.0.0.1',
     'localhost',
+    '10.0.2.2'
 ]
 
 
