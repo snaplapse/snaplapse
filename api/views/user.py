@@ -1,5 +1,10 @@
 import json
 
+# from django.contrib.auth import authenticate
+from django.contrib.auth.hashers import check_password
+from django.core import serializers
+from django.shortcuts import get_object_or_404
+
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -7,11 +12,7 @@ from rest_framework.response import Response
 
 from ..models import User
 from ..serializers import UserSerializer
-from django.contrib.auth import authenticate
-from django.shortcuts import get_object_or_404
 
-from django.contrib.auth.hashers import check_password
-from django.core import serializers
 
 class MultipleFieldLookupMixin:
     """
@@ -21,11 +22,11 @@ class MultipleFieldLookupMixin:
     def get_object(self):
         queryset = self.get_queryset()             # Get the base queryset
         queryset = self.filter_queryset(queryset)  # Apply any filter backends
-        filter = {}
+        object_filter = {}
         for field in self.lookup_fields:
             if self.kwargs[field]: # Ignore empty fields.
-                filter[field] = self.kwargs[field]
-        obj = get_object_or_404(queryset, **filter)  # Lookup the object
+                object_filter[field] = self.kwargs[field]
+        obj = get_object_or_404(queryset, **object_filter)  # Lookup the object
         self.check_object_permissions(self.request, obj)
         return obj
 
@@ -50,9 +51,9 @@ def login(request):
 
     try:
         user = User.objects.get(username=name)
-        
+
         if check_password(sec, user.secret):
-            return Response({'success': True, 'message': "User authenticated", 'data': serializers.serialize('json', [user])}, status=status.HTTP_200_OK)     
+            return Response({'success': True, 'message': "User authenticated", 'data': serializers.serialize('json', [user])}, status=status.HTTP_200_OK)
         return Response({'success': False, 'message': "Authentication credentials invalid", 'data': None}, status=status.HTTP_400_BAD_REQUEST)
     except:
         return Response({'success': False, 'message': "Authentication credentials invalid", 'data': None}, status=status.HTTP_400_BAD_REQUEST)
