@@ -13,6 +13,8 @@ urlpatterns = [
     path('photos/<int:pk>/', views.PhotoDetail.as_view()),
     path('locations/', views.LocationList.as_view()),
     path('locations/<int:pk>/', views.LocationDetail.as_view()),
+    path('flags/', views.FlagList.as_view()),
+    path('flags/<int:pk>/', views.FlagDetail.as_view()),
     path('likes/', views.LikeList.as_view()),
     path('likes/<int:pk>/', views.LikeDetail.as_view()),
     path('categories/', views.CategoryList.as_view()),
