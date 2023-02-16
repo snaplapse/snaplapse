@@ -9,4 +9,9 @@ django-settings-module=snaplapse.settings
 [MESSAGES CONTROL]
 
 disable=missing-class-docstring,
-        missing-module-docstring
+        missing-module-docstring,
+        missing-function-docstring,
+        line-too-long,
+        too-few-public-methods,
+        too-many-ancestors,
+        bare-except
