@@ -14,6 +14,7 @@ urlpatterns = [
     path('photos/<int:pk>/', views.PhotoDetail.as_view()),
     path('locations/', views.LocationList.as_view()),
     path('locations/<int:pk>/', views.LocationDetail.as_view()),
+    path('nearbyLocations', views.NearbyLocations.as_view()),
     path('locationsLikeCountsByUser/<int:userId>/', views.locationsLikeCountsByUser),
     path('locationsLikeCountsAllUsers/', views.locationsLikeCountsAllUsers),
     path('flags/', views.FlagList.as_view()),

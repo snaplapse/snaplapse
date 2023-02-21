@@ -1,11 +1,13 @@
 from rest_framework import generics
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from ..models import Location
 from ..serializers import LocationSerializer
 from django.db import connection
+import math
 
 class LocationList(generics.ListCreateAPIView):
     queryset = Location.objects.all()
@@ -15,6 +17,35 @@ class LocationDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Location.objects.all()
     serializer_class = LocationSerializer
 
+class NearbyLocations(generics.ListAPIView):
+    serializer_class = LocationSerializer
+    
+    def get_queryset(self):
+        params = self.request.query_params
+
+        try:
+            latitude = float(params.get('coordinates').split(',')[0])
+            longitude = float(params.get('coordinates').split(',')[1])
+            radius = float(params.get('radius'))
+            count = 20 # default 20 results
+            if params.get('count'):
+                count = float(params.get('count'))
+
+            lat1 = latitude - (radius / 6378000) * (180 / math.pi)
+            lat2 = latitude + (radius / 6378000) * (180 / math.pi)
+            lng1 = longitude - (radius / 6378000) * (180 / math.pi) / math.cos(latitude * math.pi/180)
+            lng2 = longitude + (radius / 6378000) * (180 / math.pi) / math.cos(latitude * math.pi/180)
+            queryset = Location.objects.filter(
+                latitude__gte = lat1, 
+                latitude__lte = lat2,
+                longitude__gte = lng1,
+                longitude__lte = lng2
+            ).order_by('id')[0:count]   # grabs the top 'count' results by id, maybe order by proximity in the future!
+
+            return queryset
+        except:
+            raise ValidationError("Invalid request.")
+        
 def processQueryToDictList(query):
     cursor = connection.cursor()
     cursor.execute(query)
