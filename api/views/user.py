@@ -62,15 +62,14 @@ def login(request):
 def edit_user(request, pk):
     body_unicode = request.body.decode('utf-8')
     body = json.loads(body_unicode)
-    name, sec = body['username'], body['secret']
 
     try:
         user = User.objects.get(id=pk)
 
-        if name is not "":
-            user.username = name
-        elif sec is not "":
-            user.secret = make_password(sec)
+        if body.get('username'):
+            user.username = body.get('username')
+        elif body.get('secret'):
+            user.secret = make_password(body.get('secret'))
         user.save()
         return Response({'success': True, 'message': "User details updated"}, status=status.HTTP_200_OK)
     except:
