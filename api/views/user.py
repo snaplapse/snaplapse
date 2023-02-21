@@ -71,6 +71,6 @@ def edit_user(request, pk):
         elif body.get('secret'):
             user.secret = make_password(body.get('secret'))
         user.save()
-        return Response({'success': True, 'message': "User details updated"}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'message': "User details updated", 'data': None}, status=status.HTTP_200_OK)
     except:
-        return Response({'success': False, 'message': "Failed to update user"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'success': False, 'message': "Failed to update user", 'data': None}, status=status.HTTP_400_BAD_REQUEST)
