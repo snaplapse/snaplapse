@@ -1,8 +1,18 @@
+import json
+
+# from django.contrib.auth import authenticate
+from django.contrib.auth.hashers import check_password, make_password
+from django.core import serializers
+from django.shortcuts import get_object_or_404
+
 from rest_framework import generics
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 from ..models import User
 from ..serializers import UserSerializer
-from django.shortcuts import get_object_or_404
+
 
 class MultipleFieldLookupMixin:
     """
@@ -12,11 +22,11 @@ class MultipleFieldLookupMixin:
     def get_object(self):
         queryset = self.get_queryset()             # Get the base queryset
         queryset = self.filter_queryset(queryset)  # Apply any filter backends
-        filter = {}
+        object_filter = {}
         for field in self.lookup_fields:
             if self.kwargs[field]: # Ignore empty fields.
-                filter[field] = self.kwargs[field]
-        obj = get_object_or_404(queryset, **filter)  # Lookup the object
+                object_filter[field] = self.kwargs[field]
+        obj = get_object_or_404(queryset, **object_filter)  # Lookup the object
         self.check_object_permissions(self.request, obj)
         return obj
 
@@ -32,3 +42,35 @@ class UserDetailByName(MultipleFieldLookupMixin, generics.RetrieveUpdateDestroyA
     queryset = User.objects.all()
     serializer_class = UserSerializer
     lookup_fields = ['username']
+
+@api_view(['POST'])
+def login(request):
+    body_unicode = request.body.decode('utf-8')
+    body = json.loads(body_unicode)
+    name, sec = body['username'], body['secret']
+
+    try:
+        user = User.objects.get(username=name)
+
+        if check_password(sec, user.secret):
+            return Response({'success': True, 'message': "User authenticated", 'data': serializers.serialize('json', [user])}, status=status.HTTP_200_OK)
+        return Response({'success': False, 'message': "Authentication credentials invalid", 'data': None}, status=status.HTTP_400_BAD_REQUEST)
+    except:
+        return Response({'success': False, 'message': "Authentication credentials invalid", 'data': None}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['PUT'])
+def edit_user(request, pk):
+    body_unicode = request.body.decode('utf-8')
+    body = json.loads(body_unicode)
+
+    try:
+        user = User.objects.get(id=pk)
+
+        if body.get('username'):
+            user.username = body.get('username')
+        elif body.get('secret'):
+            user.secret = make_password(body.get('secret'))
+        user.save()
+        return Response({'success': True, 'message': "User details updated"}, status=status.HTTP_200_OK)
+    except:
+        return Response({'success': False, 'message': "Failed to update user"}, status=status.HTTP_400_BAD_REQUEST)
