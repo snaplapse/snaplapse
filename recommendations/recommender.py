@@ -1,175 +1,80 @@
-from ast import increment_lineno
 from turtle import pd
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn import preprocessing
 from sklearn.neighbors import NearestNeighbors
 
+import requests
+import json
 import pandas as pd
+import time
+import sys
+
+st = time.time()
+
 pd.options.mode.chained_assignment = None  # default='warn'
+pd.options.display.max_columns = None
 
-import sqlite3
+def load_data(latitude, longitude, radius):
+    # Get locations
+    nearby_locations_url = ("http://localhost:8000/api/nearbyLocations?coordinates={},{}&radius={}").format(latitude, longitude, radius)
+    get_locations = json.loads(requests.get(nearby_locations_url).content.decode("utf-8"))
+    locations_list = []
+    counter = 0
+    for location in get_locations["results"]:
+        categories = []
+        
+        # HARDCODED CATEGORY SETTING UNTIL CATEGORIES ARE IMPLEMENTED IN LOCATIONS ROUTE
+        if counter == 0:
+            categories = ['food','restaurant']
+        elif counter == 1:
+            categories = ['food','restaurant']
+        else:
+            categories = ['university', 'point_of_interest', 'establishment']
+        locations_list.append((location['id'], location['name'], location['latitude'], location['longitude'], categories))
+        # print(location)
+        counter = counter + 1
+    locations = pd.DataFrame(locations_list, columns = ['location_id', 'name', 'latitude', 'longitude', 'categories']).sort_values(by=['location_id'])
+    locations.set_index('location_id', drop=False, inplace=True)
+    # print(locations)
 
-conn = sqlite3.connect('test_database')
-c = conn.cursor()
+    # Get likes
+    get_likes = json.loads(requests.get("http://localhost:8000/api/locationsLikeCountsAllUsers/").content.decode("utf-8"))
+    likes_list = []
+    for like in get_likes["results"]:
+        likes_list.append((like["user_id"], like["location_id"], like["likes"]))
+    likes = pd.DataFrame(likes_list, columns = ['user_id', 'location_id', 'likes'])
+    likes.set_index('location_id', drop=False, inplace=True)
+    # print(likes)
+    
+    return likes, locations
 
-c.execute('''
-          DROP TABLE IF EXISTS Ratings''')
-c.execute('''
-          DROP TABLE IF EXISTS Locations''')
-
-c.execute('''
-          CREATE TABLE IF NOT EXISTS Ratings
-          ([locationId] INTEGER, 
-          [location] INTEGER,
-          [category] TEXT, 
-          [likes] INTEGER,
-          [user, item] PRIMARY KEY)
-          ''')
-
-c.execute('''
-          INSERT INTO Ratings (locationId, location, category, likes)
-                VALUES
-                (1,'Tim Hortons','F',2),
-                (2,'Waterloo Park','N',0),
-                (3,'University of Waterloo','S',3),
-                (4,'Crunch Fitness Waterloo','G',1),
-                (5,'Conestoga Mall','MF',5)
-          ''')
-
-c.execute('''
-          CREATE TABLE IF NOT EXISTS Locations
-          ([locationId] INTEGER PRIMARY KEY, 
-          [location] TEXT,
-          [proximity] TEXT,
-          [category] FLOAT(10))
-          ''')
-
-c.execute('''
-          INSERT INTO Locations (locationId, location, category, proximity)
-                VALUES
-                (1,'Tim Hortons','F',1.0),
-                (2,'Waterloo Park','N',1.6),
-                (3,'University of Waterloo','S',0.5),
-                (4,'Crunch Fitness Waterloo','G',2.9),
-                (5,'Conestoga Mall','MF',3.8),
-                (6,'McDonalds','F',1.8),
-                (7,'Victoria Park','N',5.1),
-                (8,'Lazeez','F',0.2),
-                (9,'Fairview Mall','MF',10.4),
-                (10,'PAC Gym','G',0.8)
-          ''')
-
-conn.commit()
-
-sql_query = pd.read_sql_query ('''
-                               SELECT
-                               *
-                               FROM Ratings
-                               ''', conn)
-sql_query2 = pd.read_sql_query ('''
-                               SELECT
-                               *
-                               FROM Locations
-                               ''', conn)
-
-ratings = pd.DataFrame(sql_query, columns = ['locationId', 'location', 'category', 'likes'])
-print ("Ratings:")
-print (ratings)
-print ()
-
-locations = pd.DataFrame(sql_query2, columns = ['locationId', 'location', 'category', 'proximity'])
-print ("Locations:")
-print (locations)
-print ()
-
-def main():
-    #todo: break into functions
-    # load_data()
-    # process_data()
-    # make_recommmendations()
-
-
-    # First let's make a copy of the locations
+def generate_affinity_recommendations(user_id, likes, locations, num_recs):
     locations_with_categories = locations.copy(deep=True)
 
-    # Let's iterate through locations, then append the location categories as columns of 1s or 0s.
-    # 1 if that column contains locations in the categories at the present index and 0 if not.
-    x = []
+    # Iterate through locations and append the location categories as columns of 1s or 0s. 1 if the location at the present index contains the category and 0 if not.
     for index, row in locations.iterrows():
-        x.append(index)
-        for category in row['category']:
+        for category in row['categories']:
             locations_with_categories.at[index, category] = 1
-
-    # Confirm that every row has been iterated and acted upon
-    # print(len(x) == len(locations))
-
-    # print(locations_with_categories)
-
-    #Filling in the NaN values with 0 to show that a location doesn't have that column's category
+    # Fill in the NaN values with 0
     locations_with_categories = locations_with_categories.fillna(0)
-    # print(locations_with_categories.head(3))
 
-    # print out the shape and first five rows of ratings data.
-    # print('Ratings_df shape:', ratings.shape)
-    # print(ratings.head())
+    # Grab the likes of the indicated user
+    user_likes = likes[likes['user_id'] == user_id]
+    # Filter to only the relevant categories by selecting locations that exist in both user_likes and locations_with_categories
+    user_categories = locations_with_categories[locations_with_categories.location_id.isin(user_likes.location_id)]
+    # Drop redundant columns
+    user_categories.drop(['location_id','name','latitude', 'longitude','categories'], axis=1, inplace=True)
 
-    # filter the selection by outputing locations that exist in both ratings and locations_with_categories
-    user_categories = locations_with_categories[locations_with_categories.locationId.isin(ratings.locationId)]
-    # print(user_categories)
-    # First, let's reset index to default and drop the existing index.
-    user_categories.reset_index(drop=True, inplace=True)
+    # Take dot product of transpose of user_categories by user_likes column to get user category affinities
+    user_affinities = user_categories.T.dot(user_likes.likes)
 
-    # Next, let's drop redundant columns
-    user_categories.drop(['locationId','location','category','proximity'], axis=1, inplace=True)
+    # Delete unnecessary columns
+    locations_with_categories.drop(['location_id','name','categories','latitude','longitude'], axis=1, inplace=True)
 
-    # Let's view chamges
-    # print(user_categories)
-
-    # let's confirm the shapes of our data frames to guide us as we do matrix multiplication
-    # print('Shape of ratings is:', ratings.shape)
-    # print('Shape of user_categories is:', user_categories.shape)
-
-    # Let's find the dot product of transpose of user_categories by ratings likes column
-    user_profile = user_categories.T.dot(ratings.likes)
-
-    # Let's see the result
-    print("User affinities for each category:")
-    print(user_profile)
-    print()
-    
-
-    # let's set the index to the locationId
-    locations_with_categories = locations_with_categories.set_index(locations_with_categories.locationId)
-
-    # let's view the head
-    # print(locations_with_categories.head())
-
-    # Deleting three unnecessary columns.
-    locations_with_proximities = locations.copy(deep=True)
-    locations_with_proximities = locations_with_proximities.set_index(locations_with_categories.locationId)
-    locations_with_proximities.drop(['locationId','location','category'], axis=1, inplace=True)
-    locations_with_categories.drop(['locationId','location','category','proximity'], axis=1, inplace=True)
-
-
-    # Viewing changes.
-    print("Location-category matrix:")
-    print(locations_with_categories)
-    print()
-
-    locationsDot = locations_with_categories.dot(user_profile)
-    # print("Location-category scores:")
-    # print(locationsDot)
-    # print()
-    # print("Location proximities:")
-    # print(locations_with_proximities)
-    # print()
-    # print(user_profile.values.reshape(1, -1))
-    user_profile_reshaped = user_profile.values.reshape(1, -1)
+    user_affinities_reshaped = user_affinities.values.reshape(1, -1)
     # technically we don't need to normalize since only the angle matters in cosine similarity
-    # user_profile_normalized = (user_profile_reshaped-user_profile_reshaped.min())/(user_profile_reshaped.max()-user_profile_reshaped.min())
+    # user_affinities_normalized = (user_affinities_reshaped-user_affinities_reshaped.min())/(user_affinities_reshaped.max()-user_affinities_reshaped.min())
+    # print(user_affinities_normalized)
 
-    # print(user_profile_normalized)
-
+    # Create KNN nearest neighbors model with cosine distance to find nearest neighbor locations based on category affinity
     model = NearestNeighbors()
     model.set_params(**{
         'n_neighbors': 10,
@@ -177,13 +82,10 @@ def main():
         'metric': 'cosine',
         'n_jobs': -1})
     model.fit(locations_with_categories.values)
-    # print(model.effective_metric_)
-    distances, indices = model.kneighbors(user_profile_reshaped, n_neighbors=10)
+    distances, indices = model.kneighbors(user_affinities_reshaped, n_neighbors=num_recs)
+    knn_index_to_loc_index = list(locations_with_categories.index.values[indices])
 
-    # print("Knn neighbour distance, indices")
-    # print(distances, indices)
-    # print()
-
+    # Sort recommendations based on cosine distance
     raw_recommends = \
         sorted(
             list(
@@ -192,69 +94,42 @@ def main():
                     distances.squeeze().tolist()
                 )
             ),
-            key=lambda x: x[1]
+            key=lambda x: x[1]  # sort by distance
         )
 
-    # print(raw_recommends)
-
-    hashmap = {
-        location: i for i, location in 
-        enumerate(list(locations.set_index('locationId').loc[locations_with_categories.index].location)) # noqa
-    }
-    # print(hashmap)
-
-    reverse_hashmap = {v: k for k, v in hashmap.items()}
-    print('Recommendations')
+    # Create list of recommendations containing location_id and cosine similarity
+    affinity_recs = []
     for i, (idx, dist) in enumerate(raw_recommends):
-        print('{0}: {1}, with cosine distance '
-                'of {2}'.format(i+1, reverse_hashmap[idx], dist))
+        affinity_recs.append((knn_index_to_loc_index[0][i], 1-dist))
+   
+    return affinity_recs
 
+def print_recommendations(locations, recommendations):
+    print('Recommendations based on user category affinity:')
+    for (idx, dist) in recommendations:
+        name = locations[locations['location_id'] == idx]['name'].values[0]
+        print('{0}: {1}, with cosine similarity of {2}'.format(idx, name, dist))
 
-    # Old manual cosine calculations
+def main():
+    if len(sys.argv) == 5:
+        user_id = int(sys.argv[1])
+        latitude = sys.argv[2]
+        longitude = sys.argv[3]
+        radius = sys.argv[4]
+    else:
+        print("Usage: python recommender.py [user_id] [latitude] [longitude] [radius]")
+        return -1    
+        
+    likes, locations = load_data(latitude, longitude, radius)
+    num_recs = 10
+    if len(locations) < num_recs:
+        num_recs = len(locations)
 
-    # # Multiply the categories by the weights and then take the weighted average.
-    # recommendation_table_df = locationsDot / user_profile.sum()
-    # print("Cosine similarities:")
-    # # print(recommendation_table_df)
-    # location_scores = cosine_similarity(user_profile_reshaped, locations_with_categories)
-    # print(location_scores)
-    # # print(cosine_similarity([[1, 0, -1]], [[-1,-1, 0], [1,1, 0]]))
-    # print()
+    affinity_recs = generate_affinity_recommendations(user_id, likes, locations, num_recs)
+    print_recommendations(locations, affinity_recs)
 
-    # # for i in range(0,10) :
-    # #     recommendation_table_df[i+1] = recommendation_table_df[i+1] * 1/(1+(float)(locations_with_proximities.iloc[i].iloc[0]))
-    # location_scores = location_scores[0]
-    # for i in range(location_scores.size):
-    #     location_scores[i] = location_scores[i] /(1+(float)(locations_with_proximities.iloc[i].iloc[0]))
-
-    # # Let's view the recommendation table
-    # # print(recommendation_table_df.head())
-
-    # # Let's sort values from great to small
-    # # recommendation_table_df.sort_values(ascending=False, inplace=True)
-    # location_scores[::-1].sort()
-
-    # #Just a peek at the values
-    # print("Recommended locations by highest affinity: cosine similarity / (1+proximity)")
-    # # print(recommendation_table_df.head(20))
-    # print(location_scores)
-    # print()
-
-    # # first we make a copy of the original locations dataframe
-    # copy = locations.copy(deep=True)
-
-    # # Then we set its index to locationId
-    # copy = copy.set_index('locationId', drop=True)
-
-    # # Next we enlist the top 20 recommended locationIds we defined above
-    # top_20_index = location_scores[0:20]
-
-    # # finally we slice these indices from the copied locations df and save in a variable
-    # recommended_locations = copy.loc[top_20_index, :]
-
-    # # Now we can display the top 20 locations in descending order of preference
-    # print("Top 20 recommended locations:")
-    # print(recommended_locations)
+    et = time.time()
+    print("\nRuntime: ", et-st)
 
 if __name__ == "__main__" :
-      main()
+    main()
