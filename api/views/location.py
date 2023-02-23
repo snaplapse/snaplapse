@@ -90,7 +90,7 @@ class Recommendations(generics.ListAPIView):
             if params.get('count'):
                 count = int(params.get('count'))
 
-            queryset = recommender.make_recommendations(user_id, latitude, longitude, radius, count)
+            queryset = recommender.make_recommendations(self.request.get_host(), user_id, latitude, longitude, radius, count)
             for location in queryset:
                 location['categories'] = Category.objects.filter(id__in=location['categories'])
             return queryset

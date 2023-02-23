@@ -11,19 +11,19 @@ start = time.time()
 pd.options.mode.chained_assignment = None  # default='warn'
 pd.options.display.max_columns = None
 
-def load_data(latitude, longitude, radius):
+def load_data(host, latitude, longitude, radius):
     # Get locations
-    nearby_locations_url = f"http://localhost:8000/api/nearbyLocations?coordinates={latitude},{longitude}&radius={radius}"
+    nearby_locations_url = f"http://{host}/api/nearbyLocations?coordinates={latitude},{longitude}&radius={radius}"
     get_locations = json.loads(requests.get(nearby_locations_url, timeout=10).content.decode("utf-8"))
     locations_list = []
-    for location in get_locations["results"]:
+    for location in get_locations['results']:
         locations_list.append((location['id'], location['name'], location['latitude'], location['longitude'], location['categories']))
     locations = pd.DataFrame(locations_list, columns = ['location_id', 'name', 'latitude', 'longitude', 'categories']).sort_values(by=['location_id'])
     locations.set_index('location_id', drop=False, inplace=True)
     # print(locations)
 
     # Get likes
-    likes_url = "http://localhost:8000/api/locationsLikeCountsAllUsers/"
+    likes_url = f"http://{host}/api/locationsLikeCountsAllUsers/"
     get_likes = json.loads(requests.get(likes_url, timeout=10).content.decode("utf-8"))
     likes_list = []
     for like in get_likes["results"]:
@@ -78,8 +78,13 @@ def generate_affinity_recommendations(user_id, likes, locations, num_recs):
 
     return affinity_recs
 
-def make_recommendations(user_id, latitude, longitude, radius, num_recs):
-    likes, locations = load_data(latitude, longitude, radius)
+def make_recommendations(host, user_id, latitude, longitude, radius, num_recs):
+    likes, locations = load_data(host, latitude, longitude, radius)
+    if len(locations) == 0:
+        return locations.to_dict('records')
+    if len(likes) == 0:
+        return locations.rename(columns={'location_id': 'id'}).head(num_recs).to_dict('records')
+
     if len(locations) < num_recs:
         num_recs = len(locations)
 
@@ -92,6 +97,7 @@ def print_recommendations(recommendations):
         print(f"{i+1}: {rec['name']}")
 
 def main():
+    host = "localhost:8000"
     num_recs = 10 # default
     if len(sys.argv) == 5 or len(sys.argv) == 6:
         user_id = int(sys.argv[1])
@@ -104,7 +110,7 @@ def main():
         print("Usage: python recommender.py [user_id] [latitude] [longitude] [radius] [num_recs]")
         sys.exit()
 
-    affinity_recs = make_recommendations(user_id, latitude, longitude, radius, num_recs)
+    affinity_recs = make_recommendations(host, user_id, latitude, longitude, radius, num_recs)
     print_recommendations(affinity_recs)
 
     end = time.time()
