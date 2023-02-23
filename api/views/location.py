@@ -6,6 +6,7 @@ from rest_framework.decorators import api_view
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
+from recommendations import recommender
 from ..models import Location, Category
 from ..serializers import LocationSerializer
 
@@ -75,6 +76,29 @@ class LocationCategories(generics.GenericAPIView):
             instance.categories.remove(*categories)
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
+
+
+class Recommendations(generics.ListAPIView):
+    serializer_class = LocationSerializer
+
+    def get_queryset(self):
+        params = self.request.query_params
+
+        try:
+            user_id = int(params.get('userId'))
+            latitude = float(params.get('coordinates').split(',')[0])
+            longitude = float(params.get('coordinates').split(',')[1])
+            radius = float(params.get('radius'))
+            count = 10 # default
+            if params.get('count'):
+                count = int(params.get('count'))
+
+            queryset = recommender.make_recommendations(self.request.get_host(), user_id, latitude, longitude, radius, count)
+            for location in queryset:
+                location['categories'] = Category.objects.filter(id__in=location['categories'])
+            return queryset
+        except:
+            raise ValidationError("Invalid request.")
 
 
 def process_query_to_dict_list(query):
