@@ -31,7 +31,7 @@ class LocationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Location
-        fields = ['id', 'name', 'longitude', 'latitude', 'photos', 'tags', 'created']
+        fields = ['id', 'name', 'longitude', 'latitude', 'photos', 'tags', 'categories', 'created']
 
 
 class PhotoSerializer(serializers.ModelSerializer):
