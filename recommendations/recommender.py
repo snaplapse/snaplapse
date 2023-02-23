@@ -6,8 +6,6 @@ import requests
 
 from sklearn.neighbors import NearestNeighbors
 
-start = time.time()
-
 pd.options.mode.chained_assignment = None  # default='warn'
 pd.options.display.max_columns = None
 
@@ -97,6 +95,8 @@ def print_recommendations(recommendations):
         print(f"{i+1}: {rec['name']}")
 
 def main():
+    start = time.time()
+
     host = "localhost:8000"
     num_recs = 10 # default
     if len(sys.argv) == 5 or len(sys.argv) == 6:
