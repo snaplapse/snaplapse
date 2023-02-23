@@ -13,7 +13,7 @@ pd.options.display.max_columns = None
 
 def load_data(host, latitude, longitude, radius):
     # Get locations
-    nearby_locations_url = f"http://{host}/api/nearbyLocations?coordinates={latitude},{longitude}&radius={radius}"
+    nearby_locations_url = f"http://{host}/api/locations/nearby?coordinates={latitude},{longitude}&radius={radius}"
     get_locations = json.loads(requests.get(nearby_locations_url, timeout=10).content.decode("utf-8"))
     locations_list = []
     for location in get_locations['results']:
@@ -23,7 +23,7 @@ def load_data(host, latitude, longitude, radius):
     # print(locations)
 
     # Get likes
-    likes_url = f"http://{host}/api/locationsLikeCountsAllUsers/"
+    likes_url = f"http://{host}/api/locations/likes/"
     get_likes = json.loads(requests.get(likes_url, timeout=10).content.decode("utf-8"))
     likes_list = []
     for like in get_likes["results"]:
