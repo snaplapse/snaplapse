@@ -1,6 +1,6 @@
 import json
 
-from django.contrib.auth.hashers import check_password
+from django.contrib.auth.hashers import check_password, make_password
 from django.core import serializers
 from django.shortcuts import get_object_or_404
 
@@ -38,6 +38,17 @@ class UserList(generics.ListCreateAPIView):
 class UserDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
+    def patch(self, request, *args, **kwargs):
+        instance = self.get_object()
+        secret = request.data.get('secret')
+        new_data = request.data.copy()
+        if secret:
+            new_data['secret'] = make_password(secret)
+        serializer = self.get_serializer(instance, data=new_data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
 
 
 class UserDetailByName(MultipleFieldLookupMixin, generics.RetrieveUpdateDestroyAPIView):
