@@ -10,6 +10,7 @@ from recommendations import recommender
 from ..models import Location, Category
 from ..serializers import LocationSerializer
 
+
 class LocationList(generics.ListCreateAPIView):
     queryset = Location.objects.all()
     serializer_class = LocationSerializer
@@ -49,6 +50,7 @@ class NearbyLocations(generics.ListAPIView):
         except:
             raise ValidationError("Invalid request.")
 
+
 class LocationCategories(generics.GenericAPIView):
     serializer_class = LocationSerializer
     queryset = Location.objects.all()
@@ -74,6 +76,7 @@ class LocationCategories(generics.GenericAPIView):
             instance.categories.remove(*categories)
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
+
 
 class Recommendations(generics.ListAPIView):
     serializer_class = LocationSerializer
