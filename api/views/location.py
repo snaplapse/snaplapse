@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from ..models import Location
 from ..serializers import LocationSerializer
 from django.db import connection
+from recommendations import recommender
 import math
 
 class LocationList(generics.ListCreateAPIView):
@@ -46,6 +47,23 @@ class NearbyLocations(generics.ListAPIView):
         except:
             raise ValidationError("Invalid request.")
         
+class Recommendations(generics.ListAPIView):
+    serializer_class = LocationSerializer
+    
+    def get_queryset(self):
+        params = self.request.query_params
+
+        try:
+            user_id = int(params.get('userId'))
+            latitude = float(params.get('coordinates').split(',')[0])
+            longitude = float(params.get('coordinates').split(',')[1])
+            radius = float(params.get('radius'))
+
+            queryset = recommender.make_recommendations(user_id, latitude, longitude, radius)
+            return queryset
+        except:
+            raise ValidationError("Invalid request.")
+
 def processQueryToDictList(query):
     cursor = connection.cursor()
     cursor.execute(query)

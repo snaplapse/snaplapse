@@ -25,6 +25,7 @@ urlpatterns = [
     path('categories/<int:pk>/', views.CategoryDetail.as_view()),
     path('tags/', views.TagList.as_view()),
     path('tags/<int:pk>/', views.TagDetail.as_view()),
+    path('recommendations', views.Recommendations.as_view()),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

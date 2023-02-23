@@ -25,9 +25,11 @@ def load_data(latitude, longitude, radius):
         if counter == 0:
             categories = ['food','restaurant']
         elif counter == 1:
-            categories = ['food','restaurant']
-        else:
             categories = ['university', 'point_of_interest', 'establishment']
+        elif counter == 2:
+            categories = ['food','restaurant']
+        elif counter == 3:
+            categories = ['food','point_of_interest']
         locations_list.append((location['id'], location['name'], location['latitude'], location['longitude'], categories))
         # print(location)
         counter = counter + 1
@@ -74,7 +76,7 @@ def generate_affinity_recommendations(user_id, likes, locations, num_recs):
     # user_affinities_normalized = (user_affinities_reshaped-user_affinities_reshaped.min())/(user_affinities_reshaped.max()-user_affinities_reshaped.min())
     # print(user_affinities_normalized)
 
-    # Create KNN nearest neighbors model with cosine distance to find nearest neighbor locations based on category affinity
+    # Create KNN nearest neighbors model with cosine distance to find the nearest neighbor locations based on category affinity
     model = NearestNeighbors()
     model.set_params(**{
         'n_neighbors': 10,
@@ -82,33 +84,31 @@ def generate_affinity_recommendations(user_id, likes, locations, num_recs):
         'metric': 'cosine',
         'n_jobs': -1})
     model.fit(locations_with_categories.values)
-    distances, indices = model.kneighbors(user_affinities_reshaped, n_neighbors=num_recs)
-    knn_index_to_loc_index = list(locations_with_categories.index.values[indices])
+    indices = model.kneighbors(user_affinities_reshaped, n_neighbors=num_recs, return_distance=False)
+    knn_index_to_loc_index = list(locations_with_categories.index.values[indices])[0]
 
-    # Sort recommendations based on cosine distance
-    raw_recommends = \
-        sorted(
-            list(
-                zip(
-                    indices.squeeze().tolist(),
-                    distances.squeeze().tolist()
-                )
-            ),
-            key=lambda x: x[1]  # sort by distance
-        )
-
-    # Create list of recommendations containing location_id and cosine similarity
+    # Create list of recommendations
     affinity_recs = []
-    for i, (idx, dist) in enumerate(raw_recommends):
-        affinity_recs.append((knn_index_to_loc_index[0][i], 1-dist))
-   
+    locations.rename(columns={'location_id': 'id'}, inplace=True)
+    for location_id in knn_index_to_loc_index:
+        row = locations[locations['id'] == location_id].to_json(orient='records')
+        affinity_recs.append(json.loads(row[1:len(row)-1]))
+    
     return affinity_recs
 
-def print_recommendations(locations, recommendations):
+def make_recommendations(user_id, latitude, longitude, radius):
+    likes, locations = load_data(latitude, longitude, radius)
+    num_recs = 10
+    if len(locations) < num_recs:
+        num_recs = len(locations)
+
+    affinity_recs = generate_affinity_recommendations(user_id, likes, locations, num_recs)
+    return affinity_recs
+
+def print_recommendations(recommendations):
     print('Recommendations based on user category affinity:')
-    for (idx, dist) in recommendations:
-        name = locations[locations['location_id'] == idx]['name'].values[0]
-        print('{0}: {1}, with cosine similarity of {2}'.format(idx, name, dist))
+    for i, rec in enumerate(recommendations):
+        print('{0}: {1}'.format(i, rec['name']))
 
 def main():
     if len(sys.argv) == 5:
@@ -120,13 +120,8 @@ def main():
         print("Usage: python recommender.py [user_id] [latitude] [longitude] [radius]")
         return -1    
         
-    likes, locations = load_data(latitude, longitude, radius)
-    num_recs = 10
-    if len(locations) < num_recs:
-        num_recs = len(locations)
-
-    affinity_recs = generate_affinity_recommendations(user_id, likes, locations, num_recs)
-    print_recommendations(locations, affinity_recs)
+    affinity_recs = make_recommendations(user_id, latitude, longitude, radius)
+    print_recommendations(affinity_recs)
 
     et = time.time()
     print("\nRuntime: ", et-st)
