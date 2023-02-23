@@ -57,9 +57,13 @@ class LocationCategories(generics.GenericAPIView):
     def post(self, request, *args, **kwargs):
         instance = self.get_object()
         category_ids = request.data.get('categories')
-        if category_ids:
-            categories = Category.objects.filter(id__in=category_ids)
-            instance.categories.add(*categories)
+        if not category_ids:
+            return Response({'error': 'Missing argument: categories'}, status.HTTP_400_BAD_REQUEST)
+        categories = Category.objects.filter(id__in=category_ids)
+        mismatch = len(category_ids) - len(categories)
+        if mismatch:
+            return Response({'error': f'{mismatch} of the categories provided do{"es" if mismatch == 1 else ""} not exist'}, status.HTTP_400_BAD_REQUEST)
+        instance.categories.add(*categories)
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 

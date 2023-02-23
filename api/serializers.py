@@ -10,7 +10,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ['id', 'name', 'tags', 'locations', 'created']
+        fields = ['id', 'name', 'tags', 'created']
 
 
 class FlagSerializer(serializers.ModelSerializer):
