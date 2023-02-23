@@ -1,4 +1,4 @@
-from .user import UserList, UserDetail, UserDetailByName, login, edit_user
+from .user import UserList, UserDetail, UserDetailByName, login
 from .photo import PhotoList, PhotoDetail
 from .location import LocationList, LocationDetail, NearbyLocations, locationsLikeCountsByUser, locationsLikeCountsAllUsers
 from .flag import FlagList, FlagDetail

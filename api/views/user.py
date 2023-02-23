@@ -1,7 +1,6 @@
 import json
 
-# from django.contrib.auth import authenticate
-from django.contrib.auth.hashers import check_password, make_password
+from django.contrib.auth.hashers import check_password
 from django.core import serializers
 from django.shortcuts import get_object_or_404
 
@@ -30,18 +29,22 @@ class MultipleFieldLookupMixin:
         self.check_object_permissions(self.request, obj)
         return obj
 
+
 class UserList(generics.ListCreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
 
 class UserDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+
 class UserDetailByName(MultipleFieldLookupMixin, generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     lookup_fields = ['username']
+
 
 @api_view(['POST'])
 def login(request):
@@ -57,20 +60,3 @@ def login(request):
         return Response({'success': False, 'message': "Authentication credentials invalid", 'data': None}, status=status.HTTP_400_BAD_REQUEST)
     except:
         return Response({'success': False, 'message': "Authentication credentials invalid", 'data': None}, status=status.HTTP_400_BAD_REQUEST)
-
-@api_view(['PUT'])
-def edit_user(request, pk):
-    body_unicode = request.body.decode('utf-8')
-    body = json.loads(body_unicode)
-
-    try:
-        user = User.objects.get(id=pk)
-
-        if body.get('username'):
-            user.username = body.get('username')
-        elif body.get('secret'):
-            user.secret = make_password(body.get('secret'))
-        user.save()
-        return Response({'success': True, 'message': "User details updated", 'data': None}, status=status.HTTP_200_OK)
-    except:
-        return Response({'success': False, 'message': "Failed to update user", 'data': None}, status=status.HTTP_400_BAD_REQUEST)
