@@ -88,6 +88,8 @@ class Recommendations(generics.ListAPIView):
             radius = float(params.get('radius'))
 
             queryset = recommender.make_recommendations(user_id, latitude, longitude, radius)
+            for location in queryset:
+                location['categories'] = Category.objects.filter(id__in=location['categories'])
             return queryset
         except:
             raise ValidationError("Invalid request.")
