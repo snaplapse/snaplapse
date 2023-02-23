@@ -86,8 +86,11 @@ class Recommendations(generics.ListAPIView):
             latitude = float(params.get('coordinates').split(',')[0])
             longitude = float(params.get('coordinates').split(',')[1])
             radius = float(params.get('radius'))
+            count = 10 # default
+            if params.get('count'):
+                count = int(params.get('count'))
 
-            queryset = recommender.make_recommendations(user_id, latitude, longitude, radius)
+            queryset = recommender.make_recommendations(user_id, latitude, longitude, radius, count)
             for location in queryset:
                 location['categories'] = Category.objects.filter(id__in=location['categories'])
             return queryset

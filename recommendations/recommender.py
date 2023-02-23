@@ -78,9 +78,8 @@ def generate_affinity_recommendations(user_id, likes, locations, num_recs):
 
     return affinity_recs
 
-def make_recommendations(user_id, latitude, longitude, radius):
+def make_recommendations(user_id, latitude, longitude, radius, num_recs):
     likes, locations = load_data(latitude, longitude, radius)
-    num_recs = 10
     if len(locations) < num_recs:
         num_recs = len(locations)
 
@@ -93,16 +92,19 @@ def print_recommendations(recommendations):
         print(f"{i+1}: {rec['name']}")
 
 def main():
-    if len(sys.argv) == 5:
+    num_recs = 10 # default
+    if len(sys.argv) == 5 or len(sys.argv) == 6:
         user_id = int(sys.argv[1])
-        latitude = sys.argv[2]
-        longitude = sys.argv[3]
-        radius = sys.argv[4]
+        latitude = float(sys.argv[2])
+        longitude = float(sys.argv[3])
+        radius = float(sys.argv[4])
+        if len(sys.argv) == 6:
+            num_recs = int(sys.argv[5])
     else:
-        print("Usage: python recommender.py [user_id] [latitude] [longitude] [radius]")
+        print("Usage: python recommender.py [user_id] [latitude] [longitude] [radius] [num_recs]")
         sys.exit()
 
-    affinity_recs = make_recommendations(user_id, latitude, longitude, radius)
+    affinity_recs = make_recommendations(user_id, latitude, longitude, radius, num_recs)
     print_recommendations(affinity_recs)
 
     end = time.time()
