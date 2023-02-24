@@ -11,6 +11,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='photo',
             name='bitmap',
-            field=models.BinaryField(default=b''),
+            field=models.TextField(default=''),
         ),
     ]

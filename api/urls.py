@@ -11,6 +11,7 @@ urlpatterns = [
     path('login/', views.login),
     path('photos/', views.PhotoList.as_view()),
     path('photos/<int:pk>/', views.PhotoDetail.as_view()),
+    path('photos/<int:pk>/download/', views.PhotoDownload.as_view()),
     path('locations/', views.LocationList.as_view()),
     path('locations/<int:pk>/', views.LocationDetail.as_view()),
     path('locations/nearby', views.NearbyLocations.as_view()),
