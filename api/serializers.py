@@ -40,7 +40,7 @@ class PhotoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Photo
-        fields = ['id', 'user', 'location', 'description', 'flags', 'likes', 'visible']
+        fields = ['id', 'user', 'location', 'description', 'flags', 'likes', 'visible', 'bitmap']
 
 
 class TagSerializer(serializers.ModelSerializer):
