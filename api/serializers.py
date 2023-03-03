@@ -40,13 +40,13 @@ class PhotoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Photo
-        fields = ['id', 'user', 'location', 'description', 'flags', 'likes', 'visible', 'bitmap']
+        fields = ['id', 'user', 'location', 'description', 'flags', 'likes', 'visible', 'bitmap', 'created']
 
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = ['id', 'location', 'category']
+        fields = ['id', 'location', 'category', 'created']
 
 
 class UserSerializer(serializers.ModelSerializer):
