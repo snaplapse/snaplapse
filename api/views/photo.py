@@ -8,13 +8,19 @@ from ..serializers import PhotoSerializer
 
 
 class PhotoList(generics.ListCreateAPIView):
-    queryset = Photo.objects.all()
     serializer_class = PhotoSerializer
+
+    def get_queryset(self):
+        user = self.request.query_params.get('user')
+        if user is None:
+            return Photo.objects.all()
+        return Photo.objects.filter(user=user)
 
 
 class PhotoDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Photo.objects.all()
     serializer_class = PhotoSerializer
+
 
 # test endpoint :3
 class PhotoDownload(generics.GenericAPIView):
