@@ -32,6 +32,14 @@ def load_data(host, latitude, longitude, radius):
 
     return likes, locations
 
+def dataframe_to_json_list(dataframe, indices):
+    result = []
+    for index in indices:
+        row = dataframe[dataframe['id'] == index].to_json(orient='records')
+        result.append(json.loads(row[1:len(row)-1])) # removes square brackets messing with format
+
+    return result
+
 def generate_affinity_recommendations(user_id, likes, locations, num_recs):
     locations_with_categories = locations.copy(deep=True)
 
@@ -46,6 +54,12 @@ def generate_affinity_recommendations(user_id, likes, locations, num_recs):
     user_likes = likes[likes['user_id'] == user_id]
     # Filter to only the relevant categories by selecting locations that exist in both user_likes and locations_with_categories
     user_categories = locations_with_categories[locations_with_categories.location_id.isin(user_likes.location_id)]
+
+    # Return locations as is if no matching categories with likes
+    if user_categories.empty: 
+        locations = locations.rename(columns={'location_id': 'id'})
+        return dataframe_to_json_list(locations, locations.index)
+
     # Drop redundant columns
     user_categories.drop(['location_id','name','latitude', 'longitude','categories','google_id'], axis=1, inplace=True)
     # Take dot product of transpose of user_categories by user_likes column to get user category affinities
@@ -68,12 +82,9 @@ def generate_affinity_recommendations(user_id, likes, locations, num_recs):
     knn_index_to_loc_index = list(locations_with_categories.index.values[indices])[0]
 
     # Create list of recommendations
-    affinity_recs = []
-    locations_copy = locations.rename(columns={'location_id': 'id'})
-    for location_id in knn_index_to_loc_index:
-        row = locations_copy[locations_copy['id'] == location_id].to_json(orient='records')
-        affinity_recs.append(json.loads(row[1:len(row)-1]))
-
+    locations = locations.rename(columns={'location_id': 'id'})
+    affinity_recs = dataframe_to_json_list(locations, knn_index_to_loc_index)
+    
     return affinity_recs
 
 def make_recommendations(host, user_id, latitude, longitude, radius, num_recs):
