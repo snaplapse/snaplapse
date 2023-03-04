@@ -16,11 +16,22 @@ class PhotoList(generics.ListCreateAPIView):
             return Photo.objects.all()
         return Photo.objects.filter(user=user)
 
+class PhotoPrefixList(generics.ListCreateAPIView):
+    serializer_class = PhotoSerializer
+
+    def get_queryset(self):
+        obj = Photo.objects.all()
+        for o in obj:
+            o.bitmap = "data:image/jpeg;base64," + o.bitmap
+
+        user = self.request.query_params.get('user')
+        if user is None:
+            return obj
+        return obj.filter(user=user)
 
 class PhotoDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Photo.objects.all()
     serializer_class = PhotoSerializer
-
 
 # test endpoint :3
 class PhotoDownload(generics.GenericAPIView):
