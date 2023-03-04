@@ -14,6 +14,7 @@ urlpatterns = [
     path('photos/<int:pk>/download/', views.PhotoDownload.as_view()),
     path('locations/', views.LocationList.as_view()),
     path('locations/<int:pk>/', views.LocationDetail.as_view()),
+    re_path('^locations/googleId/(?P<google_id>.+)/$', views.LocationDetailByGoogleId.as_view()),
     path('locations/nearby', views.NearbyLocations.as_view()),
     path('locations/<int:pk>/categories/', views.LocationCategories.as_view()),
     path('locations/likes/<int:user_id>/', views.locations_like_counts_by_user),
@@ -25,6 +26,7 @@ urlpatterns = [
     path('likes/<int:pk>/', views.LikeDetail.as_view()),
     path('categories/', views.CategoryList.as_view()),
     path('categories/<int:pk>/', views.CategoryDetail.as_view()),
+    re_path('^categories/(?P<name>.+)/$', views.CategoryDetailByName.as_view()),
     path('tags/', views.TagList.as_view()),
     path('tags/<int:pk>/', views.TagDetail.as_view()),
 ]
