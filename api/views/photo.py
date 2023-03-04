@@ -13,11 +13,14 @@ class PhotoList(generics.ListCreateAPIView):
     def get_queryset(self):
         user = self.request.query_params.get('user')
         location = self.request.query_params.get('location')
+        sort_by = self.request.query_params.get('sort_by')
         photos = Photo.objects.all()
         if user is not None:
             photos = photos.filter(user=user)
         if location is not None:
             photos = photos.filter(location=location)
+        if sort_by is not None:
+            photos = photos.order_by(sort_by)
         return photos
 
 class PhotoPrefixList(generics.ListCreateAPIView):
