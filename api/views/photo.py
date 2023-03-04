@@ -12,22 +12,26 @@ class PhotoList(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.query_params.get('user')
-        if user is None:
-            return Photo.objects.all()
-        return Photo.objects.filter(user=user)
+        location = self.request.query_params.get('location')
+        photos = Photo.objects.all()
+        if user is not None:
+            photos = photos.filter(user=user)
+        if location is not None:
+            photos = photos.filter(location=location)
+        return photos
 
 class PhotoPrefixList(generics.ListCreateAPIView):
     serializer_class = PhotoSerializer
 
     def get_queryset(self):
-        obj = Photo.objects.all()
-        for o in obj:
-            o.bitmap = "data:image/jpeg;base64," + o.bitmap
+        photos = Photo.objects.all()
+        for photo in photos:
+            photo.bitmap = "data:image/jpeg;base64," + photo.bitmap
 
         user = self.request.query_params.get('user')
         if user is None:
-            return obj
-        return obj.filter(user=user)
+            return photos
+        return photos.filter(user=user)
 
 class PhotoDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Photo.objects.all()
