@@ -10,6 +10,7 @@ urlpatterns = [
     re_path('^users/(?P<username>.+)/$', views.UserDetailByName.as_view()),
     path('login/', views.login),
     path('photos/', views.PhotoList.as_view()),
+    path('photos/prefixed/', views.PhotoPrefixList.as_view()),
     path('photos/<int:pk>/', views.PhotoDetail.as_view()),
     path('photos/<int:pk>/download/', views.PhotoDownload.as_view()),
     path('locations/', views.LocationList.as_view()),
