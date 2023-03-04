@@ -6,10 +6,29 @@ from rest_framework.decorators import api_view
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
+from django.shortcuts import get_object_or_404
+
 from recommendations import recommender
 from ..models import Location, Category
 from ..serializers import LocationSerializer
 
+
+class MultipleFieldLookupMixin:
+    """
+    Apply this mixin to any view or viewset to get multiple field filtering
+    based on a `lookup_fields` attribute, instead of the default single field filtering.
+    """
+    def get_object(self):
+        queryset = self.get_queryset()             # Get the base queryset
+        queryset = self.filter_queryset(queryset)  # Apply any filter backends
+        object_filter = {}
+        for field in self.lookup_fields:
+            if self.kwargs[field]: # Ignore empty fields.
+                object_filter[field] = self.kwargs[field]
+        obj = get_object_or_404(queryset, **object_filter)  # Lookup the object
+        self.check_object_permissions(self.request, obj)
+        return obj
+    
 
 class LocationList(generics.ListCreateAPIView):
     queryset = Location.objects.all()
@@ -19,6 +38,12 @@ class LocationList(generics.ListCreateAPIView):
 class LocationDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Location.objects.all()
     serializer_class = LocationSerializer
+
+
+class LocationDetailByGoogleId(MultipleFieldLookupMixin, generics.RetrieveUpdateDestroyAPIView):
+    queryset = Location.objects.all()
+    serializer_class = LocationSerializer
+    lookup_fields = ['google_id']
 
 
 class NearbyLocations(generics.ListAPIView):
