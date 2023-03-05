@@ -73,7 +73,6 @@ def generate_affinity_recommendations(user_id, likes, locations, num_recs):
     # Create KNN nearest neighbors model with cosine distance to find the nearest neighbor locations based on category affinity
     model = NearestNeighbors()
     model.set_params(**{
-        'n_neighbors': 10,
         'algorithm': 'brute',
         'metric': 'cosine',
         'n_jobs': -1})
@@ -87,6 +86,61 @@ def generate_affinity_recommendations(user_id, likes, locations, num_recs):
     
     return affinity_recs
 
+def generate_user_recommendations(likes, locations, affinity_recs, num_recs):
+    locations = locations.rename(columns={'location_id': 'id'})
+    num_locations = len(locations.index)
+
+    pivot_likes = likes.pivot(columns='user_id', values='likes')
+
+    # Append locations without likes as 0 likes for all users
+    for index in locations.index:
+        if index not in pivot_likes.index: 
+            location = pd.DataFrame(0, index=[index], columns=pivot_likes.columns)
+            pivot_likes = pd.concat([pivot_likes, location])
+
+    # Fill in the NaN values with 0
+    pivot_likes = pivot_likes.fillna(0)
+    pivot_likes.sort_index(inplace=True)
+
+    # Create KNN nearest neighbors model with cosine distance to find the nearest neighbor locations based on similar user likes
+    model = NearestNeighbors()
+    model.set_params(**{
+        'algorithm': 'brute',
+        'metric': 'cosine',
+        'n_jobs': -1})
+    model.fit(pivot_likes.values)
+    
+    user_rec_ids = []
+    for i in range(0, num_recs):
+        seed_id = affinity_recs[i]['id']
+        seed = pivot_likes.loc[[seed_id]]
+
+        found = False
+        n = 10 if num_locations > 10 else num_locations
+        while True:
+            # Generate nearest neighbours
+            indices = model.kneighbors(seed, n_neighbors=n, return_distance=False)
+            
+            # Check list of neighbors for a non-duplicate to add as rec
+            for id in list(locations.index.values[indices])[0]:
+                if not any(r['id'] == id for r in affinity_recs) and id not in user_rec_ids:
+                    user_rec_ids.append(id)
+                    found = True
+                    break
+
+            if found:
+                break
+
+            if n < num_locations: # if still not found, generate 10 more and keep checking
+                n = n + 10 if num_locations > n + 10 else num_locations
+            else: # if out of locations return as is
+                user_recs = dataframe_to_json_list(locations, user_rec_ids)
+                return user_recs
+
+    user_recs = dataframe_to_json_list(locations, user_rec_ids)
+
+    return user_recs
+
 def make_recommendations(host, user_id, latitude, longitude, radius, num_recs):
     likes, locations = load_data(host, latitude, longitude, radius)
     if len(locations) == 0:
@@ -97,8 +151,23 @@ def make_recommendations(host, user_id, latitude, longitude, radius, num_recs):
     if len(locations) < num_recs:
         num_recs = len(locations)
 
-    affinity_recs = generate_affinity_recommendations(user_id, likes, locations, num_recs)
-    return affinity_recs
+    num_affinity_recs = num_recs//2 if num_recs%2 == 0 else num_recs//2 + 1
+    num_user_recs = num_recs//2
+
+    affinity_recs = generate_affinity_recommendations(user_id, likes, locations, num_affinity_recs)
+    user_recs = generate_user_recommendations(likes, locations, affinity_recs, num_user_recs)
+
+    recommendations = []
+    for i in range (0, len(affinity_recs) + len(user_recs)):
+        if i // 2 > len(user_recs):    # if run out of user recs just append affinity recs (affinity recs > user recs)
+            recommendations.append(affinity_recs.pop(0))
+        else: 
+            if i % 2 == 0:  # alternates between affinity and user recs
+                recommendations.append(affinity_recs.pop(0))
+            elif i % 2 == 1:
+                recommendations.append(user_recs.pop(0))
+
+    return recommendations
 
 def print_recommendations(recommendations):
     print('Recommendations based on user category affinity:')
@@ -121,8 +190,8 @@ def main():
         print("Usage: python recommender.py [user_id] [latitude] [longitude] [radius] [num_recs]")
         sys.exit()
 
-    affinity_recs = make_recommendations(host, user_id, latitude, longitude, radius, num_recs)
-    print_recommendations(affinity_recs)
+    recommendations = make_recommendations(host, user_id, latitude, longitude, radius, num_recs)
+    print_recommendations(recommendations)
 
     end = time.time()
     print("\nRuntime: ", end-start)
