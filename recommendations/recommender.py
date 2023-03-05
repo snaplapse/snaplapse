@@ -158,8 +158,11 @@ def make_recommendations(host, user_id, latitude, longitude, radius, num_recs):
     user_recs = generate_user_recommendations(likes, locations, affinity_recs, num_user_recs)
 
     recommendations = []
-    for i in range (0, len(affinity_recs) + len(user_recs)):
-        if i // 2 > len(user_recs):    # if run out of user recs just append affinity recs (affinity recs > user recs)
+    alength = len(affinity_recs)
+    ulength = len(user_recs)
+    
+    for i in range (0, alength + ulength):
+        if i // 2 > ulength:    # if run out of user recs just append affinity recs (affinity recs > user recs)
             recommendations.append(affinity_recs.pop(0))
         else: 
             if i % 2 == 0:  # alternates between affinity and user recs
