@@ -169,7 +169,9 @@ def make_recommendations(host, user_id, latitude, longitude, radius, num_recs):
     likes, locations, nearby_locations = load_data(host, latitude, longitude, radius)
     if len(nearby_locations) == 0:
         return nearby_locations.to_dict('records')
-    if len(likes) == 0:
+
+    user_likes = likes[likes['user_id'] == user_id]
+    if len(user_likes) == 0:
         return nearby_locations.rename(columns={'location_id': 'id'}).head(num_recs).to_dict('records')
 
     if len(nearby_locations) < num_recs:
