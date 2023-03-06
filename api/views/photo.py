@@ -14,6 +14,7 @@ class PhotoList(generics.ListCreateAPIView):
         user = self.request.query_params.get('user')
         location = self.request.query_params.get('location')
         sort_by = self.request.query_params.get('sort_by')
+        count = self.request.query_params.get('count')
         photos = Photo.objects.all()
         if user is not None:
             photos = photos.filter(user=user)
@@ -21,6 +22,8 @@ class PhotoList(generics.ListCreateAPIView):
             photos = photos.filter(location=location)
         if sort_by is not None:
             photos = photos.order_by(sort_by)
+        if count is not None:
+            photos = photos[:int(count)]
         return photos
 
 class PhotoPrefixList(generics.ListCreateAPIView):

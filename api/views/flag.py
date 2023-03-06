@@ -19,6 +19,16 @@ class FlagList(generics.ListCreateAPIView):
             photo.save()
         return self.create(request, *args, **kwargs)
 
+    def get_queryset(self):
+        user = self.request.query_params.get('user')
+        photo = self.request.query_params.get('photo')
+        flags = Flag.objects.all()
+        if user is not None:
+            flags = flags.filter(user=user)
+        if photo is not None:
+            flags = flags.filter(photo=photo)
+        return flags
+
 
 class FlagDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Flag.objects.all()
