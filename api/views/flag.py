@@ -1,4 +1,4 @@
-from rest_framework import generics
+from rest_framework import generics, status
 from rest_framework.response import Response
 
 from ..models import Flag, Photo
@@ -46,4 +46,4 @@ class FlagDetail(generics.RetrieveUpdateDestroyAPIView):
         # Remove flag
         flag.delete()
 
-        return Response()
+        return Response(status=status.HTTP_204_NO_CONTENT)
