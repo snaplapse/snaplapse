@@ -111,16 +111,18 @@ def generate_affinity_recommendations(user_id, likes, locations, nearby_location
     return affinity_recs
 
 def generate_user_recommendations(likes, nearby_locations, affinity_recs, num_recs):
-    nearby_locations = nearby_locations.rename(columns={'location_id': 'id'})
     num_locations = len(nearby_locations.index)
 
-    pivot_likes = likes.pivot(columns='user_id', values='likes')
+    # Filter to only the nearby likes by selecting locations that exist in both likes and nearby_locations
+    nearby_likes = likes[likes.location_id.isin(nearby_locations.location_id)]
+    pivot_likes = nearby_likes.pivot(columns='user_id', values='likes')
 
     # Append locations without likes as 0 likes for all users
     for index in nearby_locations.index:
         if index not in pivot_likes.index: 
             location = pd.DataFrame(0, index=[index], columns=pivot_likes.columns)
             pivot_likes = pd.concat([pivot_likes, location])
+    nearby_locations = nearby_locations.rename(columns={'location_id': 'id'})
 
     # Fill in the NaN values with 0
     pivot_likes = pivot_likes.fillna(0)
