@@ -17,6 +17,8 @@ class PhotoList(generics.ListCreateAPIView):
         count = self.request.query_params.get('count')
         visible = self.request.query_params.get('visible')
         photos = Photo.objects.all()
+        if visible is not None:
+            photos = photos.filter(visible=visible)
         if user is not None:
             photos = photos.filter(user=user)
         if location is not None:
@@ -25,8 +27,6 @@ class PhotoList(generics.ListCreateAPIView):
             photos = photos.order_by(sort_by)
         if count is not None:
             photos = photos[:int(count)]
-        if visible is not None:
-            photos = photos.filter(visible=visible)
         return photos
 
 class PhotoPrefixList(generics.ListCreateAPIView):
