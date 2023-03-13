@@ -17,8 +17,11 @@ class PhotoList(generics.ListCreateAPIView):
         count = self.request.query_params.get('count')
         visible = self.request.query_params.get('visible')
         photos = Photo.objects.all()
-        if visible is not None:
-            photos = photos.filter(visible=visible)
+        if visible is not None and (visible == "true" or visible == "false"):
+            if visible == "true":
+                photos = photos.filter(visible=True)
+            else:
+                photos = photos.filter(visible=False)
         if user is not None:
             photos = photos.filter(user=user)
         if location is not None:
