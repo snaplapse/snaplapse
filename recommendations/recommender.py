@@ -10,13 +10,19 @@ from sklearn.neighbors import NearestNeighbors
 pd.options.mode.chained_assignment = None  # default='warn'
 pd.options.display.max_columns = None
 
+scores = [0] * 20
 def load_data(host, latitude, longitude, radius):
     # Get locations
     locations_url = f"http://{host}/api/locations/"
-    get_locations = json.loads(requests.get(locations_url, timeout=10).content.decode("utf-8"))
     locations_list = []
+    get_locations = json.loads(requests.get(locations_url, timeout=10).content.decode("utf-8"))
     for location in get_locations['results']:
         locations_list.append((location['id'], location['name'], location['latitude'], location['longitude'], location['categories'], location['google_id']))
+    # paginate and get all locations
+    while get_locations['next']: 
+        get_locations = json.loads(requests.get(get_locations['next'], timeout=10).content.decode("utf-8"))
+        for location in get_locations['results']:
+            locations_list.append((location['id'], location['name'], location['latitude'], location['longitude'], location['categories'], location['google_id']))
     locations = pd.DataFrame(locations_list, columns = ['location_id', 'name', 'latitude', 'longitude', 'categories', 'google_id']).sort_values(by=['location_id'])
     locations.set_index('location_id', drop=False, inplace=True)
     # print(locations)
@@ -35,7 +41,7 @@ def load_data(host, latitude, longitude, radius):
     likes_url = f"http://{host}/api/locations/likes/"
     get_likes = json.loads(requests.get(likes_url, timeout=10).content.decode("utf-8"))
     likes_list = []
-    for like in get_likes["results"]:
+    for like in get_likes["results"]: # don't need to paginate bc this is a custom route that gets all already
         likes_list.append((like["user_id"], like["location_id"], like["likes"]))
     likes = pd.DataFrame(likes_list, columns = ['user_id', 'location_id', 'likes'])
     likes.set_index('location_id', drop=False, inplace=True)
@@ -101,8 +107,11 @@ def generate_affinity_recommendations(user_id, likes, locations, nearby_location
         'metric': 'cosine',
         'n_jobs': -1})
     model.fit(nearby_locations_categories.values)
-    indices = model.kneighbors(user_affinities, n_neighbors=num_recs, return_distance=False)
+    dists, indices = model.kneighbors(user_affinities, n_neighbors=num_recs, return_distance=True)
     knn_index_to_loc_index = list(nearby_locations_categories.index.values[indices])[0]
+
+    for i, score in enumerate(dists[0]):
+        scores[2*i] = round(1 - score, 4)
 
     # Create list of recommendations
     nearby_locations = nearby_locations.rename(columns={'location_id': 'id'})
@@ -111,18 +120,16 @@ def generate_affinity_recommendations(user_id, likes, locations, nearby_location
     return affinity_recs
 
 def generate_user_recommendations(likes, nearby_locations, affinity_recs, num_recs):
+    nearby_locations = nearby_locations.rename(columns={'location_id': 'id'})
     num_locations = len(nearby_locations.index)
 
-    # Filter to only the nearby likes by selecting locations that exist in both likes and nearby_locations
-    nearby_likes = likes[likes.location_id.isin(nearby_locations.location_id)]
-    pivot_likes = nearby_likes.pivot(columns='user_id', values='likes')
+    pivot_likes = likes.pivot(columns='user_id', values='likes')
 
     # Append locations without likes as 0 likes for all users
     for index in nearby_locations.index:
         if index not in pivot_likes.index: 
             location = pd.DataFrame(0, index=[index], columns=pivot_likes.columns)
             pivot_likes = pd.concat([pivot_likes, location])
-    nearby_locations = nearby_locations.rename(columns={'location_id': 'id'})
 
     # Fill in the NaN values with 0
     pivot_likes = pivot_likes.fillna(0)
@@ -145,11 +152,12 @@ def generate_user_recommendations(likes, nearby_locations, affinity_recs, num_re
         n = 10 if num_locations > 10 else num_locations
         while True:
             # Generate nearest neighbours
-            indices = model.kneighbors(seed, n_neighbors=n, return_distance=False)
-            
+            dists, indices = model.kneighbors(seed, n_neighbors=n, return_distance=True)
+
             # Check list of neighbors for a non-duplicate to add as rec
-            for id in list(nearby_locations.index.values[indices])[0]:
+            for i, id in enumerate(list(nearby_locations.index.values[indices])[0]):
                 if not any(r['id'] == id for r in affinity_recs) and id not in user_rec_ids:
+                    scores[2*len(user_rec_ids) + 1] = round(1 - dists[0][i], 4)
                     user_rec_ids.append(id)
                     found = True
                     break
@@ -179,6 +187,9 @@ def make_recommendations(host, user_id, latitude, longitude, radius, num_recs):
     if len(nearby_locations) < num_recs:
         num_recs = len(nearby_locations)
 
+    global scores 
+    scores = [0] * num_recs
+
     num_affinity_recs = num_recs//2 if num_recs%2 == 0 else num_recs//2 + 1
     num_user_recs = num_recs//2
 
@@ -201,14 +212,15 @@ def make_recommendations(host, user_id, latitude, longitude, radius, num_recs):
     return recommendations
 
 def print_recommendations(recommendations):
-    print('Recommendations based on user category affinity:')
+    print('Recommended locations:')
     for i, rec in enumerate(recommendations):
-        print(f"{i+1}: {rec['name']}")
+        print(f"{i+1}: {rec['name']}; Score = {str(scores[i])}")
 
 def main():
     start = time.time()
 
-    host = "localhost:8000"
+    # host = "localhost:8000"
+    host = "snaplapse.herokuapp.com"
     num_recs = 10 # default
     if len(sys.argv) == 5 or len(sys.argv) == 6:
         user_id = int(sys.argv[1])
