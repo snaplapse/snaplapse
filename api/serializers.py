@@ -43,6 +43,15 @@ class PhotoSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'location', 'description', 'flags', 'likes', 'visible', 'bitmap', 'created']
 
 
+class PhotoMetaSerializer(serializers.ModelSerializer):
+    flags = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    likes = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+
+    class Meta:
+        model = Photo
+        fields = ['id', 'user', 'location', 'description', 'flags', 'likes', 'visible', 'created']
+
+
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag

@@ -6,7 +6,7 @@ from rest_framework import status
 from rest_framework.response import Response
 
 from ..models import Photo
-from ..serializers import PhotoSerializer
+from ..serializers import PhotoSerializer, PhotoMetaSerializer
 
 
 class PhotoList(generics.ListCreateAPIView):
@@ -20,7 +20,32 @@ class PhotoList(generics.ListCreateAPIView):
         visible = self.request.query_params.get('visible')
         photos = Photo.objects.all()
         if visible is not None and visible in ('true', 'false'):
-            if visible == "true":
+            if visible == 'true':
+                photos = photos.filter(visible=True)
+            else:
+                photos = photos.filter(visible=False)
+        if user is not None:
+            photos = photos.filter(user=user)
+        if location is not None:
+            photos = photos.filter(location=location)
+        if sort_by is not None:
+            photos = photos.order_by(sort_by)
+        if count is not None:
+            photos = photos[:int(count)]
+        return photos
+
+class PhotoMetaList(generics.ListCreateAPIView):
+    serializer_class = PhotoMetaSerializer
+
+    def get_queryset(self):
+        user = self.request.query_params.get('user')
+        location = self.request.query_params.get('location')
+        sort_by = self.request.query_params.get('sort_by')
+        count = self.request.query_params.get('count')
+        visible = self.request.query_params.get('visible')
+        photos = Photo.objects.all()
+        if visible is not None and visible in ('true', 'false'):
+            if visible == 'true':
                 photos = photos.filter(visible=True)
             else:
                 photos = photos.filter(visible=False)
